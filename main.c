@@ -1,42 +1,45 @@
 #include "monty.h"
-
-/* Initialise Global variables */
-global_t global = {
-	NULL, NULL, STACK, 0, NULL
-};
-
+bus_t bus = {NULL, NULL, NULL, 0};
 /**
- * main - entry point
- * @argc: argument count
- * @argv: arguments
- * Return: 0 success
- */
-int main(int argc, char **argv)
+* main - monty code interpreter
+* @argc: number of arguments
+* @argv: monty file location
+* Return: 0 on success
+*/
+int main(int argc, char *argv[])
 {
 	char *content;
-	char **lines;
+	FILE *file;
+	size_t size = 0;
+	ssize_t read_line = 1;
+	stack_t *stack = NULL;
+	unsigned int counter = 0;
 
 	if (argc != 2)
 	{
-		dprintf(2, "USAGE: monty file\n");
+		fprintf(stderr, "USAGE: monty file\n");
 		exit(EXIT_FAILURE);
 	}
-
-	content = read_file(argv[1]);
-	/* truncate_on_empty_line(content); */
-	lines = strtow(content, "\n");
-	free(content);
-	if (!lines)
+	file = fopen(argv[1], "r");
+	bus.file = file;
+	if (!file)
 	{
-		dprintf(2, "Error: malloc failed\n");
+		fprintf(stderr, "Error: Can't open file %s\n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
-	parse_instructions(lines);
-
-	free_tokenized(lines);
-	clear_memory();
-	if (global.quit == EXIT_FAILURE)
-		exit(EXIT_FAILURE);
-
-	return (0);
+	while (read_line > 0)
+	{
+		content = NULL;
+		read_line = getline(&content, &size, file);
+		bus.content = content;
+		counter++;
+		if (read_line > 0)
+		{
+			execute(content, &stack, counter, file);
+		}
+		free(content);
+	}
+	free_stack(stack);
+	fclose(file);
+return (0);
 }
